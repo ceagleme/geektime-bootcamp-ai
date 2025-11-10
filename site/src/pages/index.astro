@@ -8,6 +8,7 @@ import Timeline from '../components/course/Timeline';
 import ProjectCard from '../components/projects/ProjectCard';
 import { getTimelineData } from '../data/curriculum';
 import { projects } from '../data/projects';
+import { getUrl, getImageUrl } from '../utils/url';
 
 const timelineData = getTimelineData();
 const featuredProjects = projects.slice(0, 3);
@@ -17,12 +18,12 @@ const featuredProjects = projects.slice(0, 3);
   <Hero
     title="陈天的极客时间 AI 训练营"
     subtitle="让 AI 成为你的编程超能力"
-    backgroundImage="/images/hero/hero-bg.jpg"
+    backgroundImage={getImageUrl('images/hero/hero-bg.jpg')}
     client:load
   >
     <div class="flex flex-col sm:flex-row gap-4 justify-center">
-      <a href="/curriculum" class="btn-primary"> 立即开始 </a>
-      <a href="/about" class="btn-secondary"> 了解更多 </a>
+      <a href={getUrl('curriculum')} class="btn-primary"> 立即开始 </a>
+      <a href={getUrl('about')} class="btn-secondary"> 了解更多 </a>
     </div>
   </Hero>
 
@@ -99,7 +100,7 @@ const featuredProjects = projects.slice(0, 3);
       </ScrollReveal>
       <Timeline items={timelineData.slice(0, 4)} client:load />
       <div class="text-center mt-12">
-        <a href="/curriculum" class="btn-primary"> 查看完整课程大纲 </a>
+        <a href={getUrl('curriculum')} class="btn-primary"> 查看完整课程大纲 </a>
       </div>
     </div>
   </section>
@@ -130,7 +131,7 @@ const featuredProjects = projects.slice(0, 3);
         }
       </div>
       <div class="text-center">
-        <a href="/projects" class="btn-secondary"> 查看所有项目 </a>
+        <a href={getUrl('projects')} class="btn-secondary"> 查看所有项目 </a>
       </div>
     </div>
   </section>
@@ -147,7 +148,7 @@ const featuredProjects = projects.slice(0, 3);
       </ScrollReveal>
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
         <a
-          href="/materials/claude-code-architecture"
+          href={getUrl('materials/claude-code-architecture')}
           class="p-6 bg-white rounded-xl hover:shadow-lg transition-all group"
         >
           <div class="text-4xl mb-3">🏗️</div>
@@ -159,7 +160,7 @@ const featuredProjects = projects.slice(0, 3);
           </p>
         </a>
         <a
-          href="/materials/claude-code-setup"
+          href={getUrl('materials/claude-code-setup')}
           class="p-6 bg-white rounded-xl hover:shadow-lg transition-all group"
         >
           <div class="text-4xl mb-3">⚙️</div>
@@ -171,7 +172,7 @@ const featuredProjects = projects.slice(0, 3);
           </p>
         </a>
         <a
-          href="/materials/notebooklm-guide"
+          href={getUrl('materials/notebooklm-guide')}
           class="p-6 bg-white rounded-xl hover:shadow-lg transition-all group"
         >
           <div class="text-4xl mb-3">📚</div>
@@ -183,7 +184,7 @@ const featuredProjects = projects.slice(0, 3);
           </p>
         </a>
         <a
-          href="/materials/ai-coding-tools-comparison"
+          href={getUrl('materials/ai-coding-tools-comparison')}
           class="p-6 bg-white rounded-xl hover:shadow-lg transition-all group"
         >
           <div class="text-4xl mb-3">🔧</div>
@@ -196,7 +197,7 @@ const featuredProjects = projects.slice(0, 3);
         </a>
       </div>
       <div class="text-center">
-        <a href="/materials" class="btn-secondary"> 浏览全部资料 </a>
+        <a href={getUrl('materials')} class="btn-secondary"> 浏览全部资料 </a>
       </div>
     </div>
   </section>
@@ -211,8 +212,8 @@ const featuredProjects = projects.slice(0, 3);
           立即开始第一周课程，体验 AI 辅助编程的强大力量
         </p>
         <div class="flex flex-col sm:flex-row gap-4 justify-center">
-          <a href="/curriculum/week-1" class="btn-primary"> 开始第一周课程 </a>
-          <a href="/about" class="btn-secondary"> 了解课程详情 </a>
+          <a href={getUrl('curriculum/week-1')} class="btn-primary"> 开始第一周课程 </a>
+          <a href={getUrl('about')} class="btn-secondary"> 了解课程详情 </a>
         </div>
       </ScrollReveal>
     </div>
