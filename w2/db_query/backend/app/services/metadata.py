@@ -1,4 +1,4 @@
-"""Metadata extraction service for PostgreSQL databases."""
+"""Metadata extraction service for databases (PostgreSQL and MySQL)."""
 
 import asyncpg
 import json
@@ -6,11 +6,13 @@ from typing import Dict, List, Any
 from datetime import datetime, timezone
 from sqlmodel import Session, select
 from app.models.metadata import DatabaseMetadata
+from app.models.database import DatabaseType
 from app.models.schemas import TableMetadata, ColumnMetadata
-from app.services.db_connection import get_connection_pool
+from app.services import connection_factory
+from app.services import mysql_metadata
 
 
-async def extract_metadata(
+async def extract_postgres_metadata(
     database_name: str, pool: asyncpg.Pool
 ) -> Dict[str, Any]:
     """
@@ -213,7 +215,11 @@ async def cache_metadata(
 
 
 async def fetch_metadata(
-    session: Session, database_name: str, url: str, force_refresh: bool = False
+    session: Session,
+    database_name: str,
+    db_type: DatabaseType,
+    url: str,
+    force_refresh: bool = False,
 ) -> Dict[str, Any]:
     """
     Fetch database metadata with caching.
@@ -221,7 +227,8 @@ async def fetch_metadata(
     Args:
         session: SQLite database session
         database_name: Database connection name
-        url: PostgreSQL connection URL
+        db_type: Database type (PostgreSQL or MySQL)
+        url: Database connection URL
         force_refresh: Force refresh even if cache exists
 
     Returns:
@@ -233,9 +240,15 @@ async def fetch_metadata(
         if cached:
             return json.loads(cached.metadata_json)
 
-    # Fetch fresh metadata
-    pool = await get_connection_pool(database_name, url)
-    metadata_dict = await extract_metadata(database_name, pool)
+    # Fetch fresh metadata based on database type
+    pool = await connection_factory.get_connection_pool(db_type, database_name, url)
+
+    if db_type == DatabaseType.POSTGRESQL:
+        metadata_dict = await extract_postgres_metadata(database_name, pool)
+    elif db_type == DatabaseType.MYSQL:
+        metadata_dict = await mysql_metadata.extract_metadata(database_name, pool)
+    else:
+        raise ValueError(f"Unsupported database type: {db_type}")
 
     # Cache it
     await cache_metadata(session, database_name, metadata_dict)

@@ -277,3 +277,91 @@ Content-Type: application/json
 {
   "sql": "SELECT u.name, u.email, o.total, p.name as product_name FROM users u JOIN orders o ON u.id = o.user_id JOIN order_items oi ON o.id = oi.order_id JOIN products p ON oi.product_id = p.id LIMIT 100"
 }
+
+###
+### MySQL Database Tests
+###
+
+@mysqlDbName = interview_db
+@mysqlDbUrl = mysql://root@localhost:3306/{{mysqlDbName}}
+
+###
+### MySQL 1. Create/Update MySQL Database Connection
+###
+PUT {{baseUrl}}/dbs/{{mysqlDbName}} HTTP/1.1
+Content-Type: application/json
+
+{
+  "url": "{{mysqlDbUrl}}",
+  "description": "MySQL interview database for testing"
+}
+
+###
+### MySQL 2. Get MySQL Database Metadata
+###
+GET {{baseUrl}}/dbs/{{mysqlDbName}} HTTP/1.1
+
+###
+### MySQL 3. Refresh MySQL Database Metadata
+###
+POST {{baseUrl}}/dbs/{{mysqlDbName}}/refresh HTTP/1.1
+
+###
+### MySQL 4. Execute MySQL Query - Simple SELECT
+###
+POST {{baseUrl}}/dbs/{{mysqlDbName}}/query HTTP/1.1
+Content-Type: application/json
+
+{
+  "sql": "SELECT * FROM candidates LIMIT 10"
+}
+
+###
+### MySQL 5. Execute MySQL Query - SELECT with WHERE
+###
+POST {{baseUrl}}/dbs/{{mysqlDbName}}/query HTTP/1.1
+Content-Type: application/json
+
+{
+  "sql": "SELECT id, name, email FROM candidates WHERE status = 'active'"
+}
+
+###
+### MySQL 6. Execute MySQL Query - Auto LIMIT
+###
+POST {{baseUrl}}/dbs/{{mysqlDbName}}/query HTTP/1.1
+Content-Type: application/json
+
+{
+  "sql": "SELECT * FROM candidates"
+}
+
+###
+### MySQL 7. Natural Language to SQL - Chinese
+###
+POST {{baseUrl}}/dbs/{{mysqlDbName}}/query/natural HTTP/1.1
+Content-Type: application/json
+
+{
+  "prompt": "查询所有候选人的姓名和邮箱"
+}
+
+###
+### MySQL 8. Natural Language to SQL - English
+###
+POST {{baseUrl}}/dbs/{{mysqlDbName}}/query/natural HTTP/1.1
+Content-Type: application/json
+
+{
+  "prompt": "Show all active candidates with their interview scores"
+}
+
+###
+### MySQL 9. List All Database Connections (should include both PostgreSQL and MySQL)
+###
+GET {{baseUrl}}/dbs HTTP/1.1
+
+###
+### MySQL 10. Get MySQL Query History
+###
+GET {{baseUrl}}/dbs/{{mysqlDbName}}/history HTTP/1.1

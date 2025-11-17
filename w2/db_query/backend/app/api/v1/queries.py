@@ -71,6 +71,7 @@ async def execute_sql_query(
         result = await execute_query(
             session,
             name,
+            connection.db_type,
             connection.url,
             input_data.sql,
             QuerySource.MANUAL,
@@ -168,7 +169,7 @@ async def natural_language_to_sql(
 
     # Generate SQL
     try:
-        result = await nl2sql_service.generate_sql(input_data.prompt, metadata)
+        result = await nl2sql_service.generate_sql(input_data.prompt, metadata, connection.db_type)
         return GeneratedSqlResponse(
             sql=result["sql"],
             explanation=result["explanation"],

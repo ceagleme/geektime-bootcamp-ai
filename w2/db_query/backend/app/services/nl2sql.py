@@ -2,6 +2,7 @@
 
 from openai import AsyncOpenAI
 from app.config import settings
+from app.models.database import DatabaseType
 import logging
 
 logger = logging.getLogger(__name__)
@@ -16,13 +17,14 @@ class NaturalLanguageToSQLService:
         self.model = "gpt-4o-mini"  # Cost-effective model for SQL generation
 
     def _build_prompt(
-        self, user_prompt: str, metadata: dict
+        self, user_prompt: str, metadata: dict, db_type: DatabaseType = DatabaseType.POSTGRESQL
     ) -> list[dict[str, str]]:
         """Build the prompt for OpenAI with database metadata context.
 
         Args:
             user_prompt: Natural language query from user
             metadata: Database schema metadata dictionary
+            db_type: Database type (PostgreSQL or MySQL)
 
         Returns:
             List of messages for OpenAI chat completion
@@ -54,7 +56,20 @@ class NaturalLanguageToSQLService:
 
         schema_text = "\n\n".join(schema_context)
 
-        system_message = f"""You are an expert SQL query generator for PostgreSQL databases.
+        # Build database-specific rules
+        if db_type == DatabaseType.MYSQL:
+            db_name = "MySQL"
+            syntax_rules = """3. Use backticks for identifiers (e.g., `table_name`, `column_name`)
+4. Return valid MySQL syntax
+5. Use MySQL LIMIT syntax (LIMIT n)
+6. Be aware of MySQL-specific features like AUTO_INCREMENT"""
+        else:
+            db_name = "PostgreSQL"
+            syntax_rules = """3. Use proper schema qualification (schema.table)
+4. Return valid PostgreSQL syntax
+5. Use double quotes for identifiers if needed"""
+
+        system_message = f"""You are an expert SQL query generator for {db_name} databases.
 
 Database Schema:
 {schema_text}
@@ -62,10 +77,9 @@ Database Schema:
 Rules:
 1. Generate ONLY SELECT queries (no INSERT/UPDATE/DELETE/DROP)
 2. Always include LIMIT clause (max 1000 rows)
-3. Use proper schema qualification (schema.table)
-4. Return valid PostgreSQL syntax
-5. Handle both English and Chinese natural language
-6. Be concise - return just the SQL query
+{syntax_rules}
+7. Handle both English and Chinese natural language
+8. Be concise - return just the SQL query
 
 Output format:
 Return ONLY the SQL query, nothing else. No explanations, no markdown, just the SQL."""
@@ -76,13 +90,14 @@ Return ONLY the SQL query, nothing else. No explanations, no markdown, just the 
         ]
 
     async def generate_sql(
-        self, user_prompt: str, metadata: dict
+        self, user_prompt: str, metadata: dict, db_type: DatabaseType = DatabaseType.POSTGRESQL
     ) -> dict[str, str]:
         """Convert natural language to SQL query.
 
         Args:
             user_prompt: Natural language query
             metadata: Database schema metadata dictionary
+            db_type: Database type (PostgreSQL or MySQL)
 
         Returns:
             Dict with 'sql' and 'explanation' keys
@@ -91,7 +106,7 @@ Return ONLY the SQL query, nothing else. No explanations, no markdown, just the 
             Exception: If OpenAI API call fails
         """
         try:
-            messages = self._build_prompt(user_prompt, metadata)
+            messages = self._build_prompt(user_prompt, metadata, db_type)
 
             # Call OpenAI API
             response = await self.client.chat.completions.create(

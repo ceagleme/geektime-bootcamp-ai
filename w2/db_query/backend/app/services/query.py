@@ -5,25 +5,29 @@ from typing import Dict, List, Any
 from datetime import datetime, timezone
 from sqlmodel import Session, select, desc
 from app.models.query import QueryHistory, QuerySource
+from app.models.database import DatabaseType
 from app.models.schemas import QueryResult, QueryColumn
 from app.services.sql_validator import validate_and_transform_sql, SqlValidationError
-from app.services.db_connection import get_connection_pool
+from app.services import connection_factory
+from app.services import mysql_query
 
 
 async def execute_query(
     session: Session,
     database_name: str,
+    db_type: DatabaseType,
     url: str,
     sql: str,
     query_source: QuerySource = QuerySource.MANUAL,
 ) -> QueryResult:
     """
-    Execute SQL query against PostgreSQL database.
+    Execute SQL query against database (PostgreSQL or MySQL).
 
     Args:
         session: SQLite database session
         database_name: Database connection name
-        url: PostgreSQL connection URL
+        db_type: Database type (PostgreSQL or MySQL)
+        url: Database connection URL
         sql: SQL query string
         query_source: Source of the query (manual or natural language)
 
@@ -36,7 +40,7 @@ async def execute_query(
     """
     # Validate and transform SQL
     try:
-        validated_sql = validate_and_transform_sql(sql, limit=1000)
+        validated_sql = validate_and_transform_sql(sql, limit=1000, db_type=db_type)
     except SqlValidationError as e:
         # Save failed query to history
         await save_query_history(
@@ -52,65 +56,76 @@ async def execute_query(
         raise
 
     # Get connection pool
-    pool = await get_connection_pool(database_name, url)
+    pool = await connection_factory.get_connection_pool(db_type, database_name, url)
 
-    # Execute query
+    # Execute query based on database type
     start_time = time.time()
     try:
-        async with pool.acquire() as conn:
-            rows = await conn.fetch(validated_sql)
+        if db_type == DatabaseType.POSTGRESQL:
+            # PostgreSQL execution
+            async with pool.acquire() as conn:
+                rows = await conn.fetch(validated_sql)
 
+                execution_time_ms = int((time.time() - start_time) * 1000)
+
+                # Convert rows to dictionaries
+                result_rows: List[Dict[str, Any]] = []
+                columns: List[QueryColumn] = []
+
+                if rows:
+                    # Get column names and types from first row
+                    first_row = rows[0]
+                    for key, value in first_row.items():
+                        # Determine data type
+                        if value is None:
+                            data_type = "unknown"
+                        elif isinstance(value, int):
+                            data_type = "integer"
+                        elif isinstance(value, float):
+                            data_type = "double precision"
+                        elif isinstance(value, bool):
+                            data_type = "boolean"
+                        elif isinstance(value, str):
+                            data_type = "character varying"
+                        elif isinstance(value, datetime):
+                            data_type = "timestamp"
+                        else:
+                            data_type = str(type(value).__name__)
+
+                        columns.append(QueryColumn(name=key, dataType=data_type))
+
+                    # Convert all rows
+                    for row in rows:
+                        result_rows.append(dict(row))
+        elif db_type == DatabaseType.MYSQL:
+            # MySQL execution
+            result = await mysql_query.execute_query(pool, validated_sql)
             execution_time_ms = int((time.time() - start_time) * 1000)
 
-            # Convert rows to dictionaries
-            result_rows: List[Dict[str, Any]] = []
-            columns: List[QueryColumn] = []
+            columns = [QueryColumn(**col) for col in result["columns"]]
+            result_rows = result["rows"]
+        else:
+            raise ValueError(f"Unsupported database type: {db_type}")
 
-            if rows:
-                # Get column names and types from first row
-                first_row = rows[0]
-                for key, value in first_row.items():
-                    # Determine data type
-                    if value is None:
-                        data_type = "unknown"
-                    elif isinstance(value, int):
-                        data_type = "integer"
-                    elif isinstance(value, float):
-                        data_type = "double precision"
-                    elif isinstance(value, bool):
-                        data_type = "boolean"
-                    elif isinstance(value, str):
-                        data_type = "character varying"
-                    elif isinstance(value, datetime):
-                        data_type = "timestamp"
-                    else:
-                        data_type = str(type(value).__name__)
+        # Save successful query to history
+        await save_query_history(
+            session,
+            database_name,
+            validated_sql,
+            len(result_rows),
+            execution_time_ms,
+            True,
+            None,
+            query_source,
+        )
 
-                    columns.append(QueryColumn(name=key, dataType=data_type))
-
-                # Convert all rows
-                for row in rows:
-                    result_rows.append(dict(row))
-
-            # Save successful query to history
-            await save_query_history(
-                session,
-                database_name,
-                validated_sql,
-                len(result_rows),
-                execution_time_ms,
-                True,
-                None,
-                query_source,
-            )
-
-            return QueryResult(
-                columns=columns,
-                rows=result_rows,
-                rowCount=len(result_rows),
-                executionTimeMs=execution_time_ms,
-                sql=validated_sql,
-            )
+        return QueryResult(
+            columns=columns,
+            rows=result_rows,
+            rowCount=len(result_rows),
+            executionTimeMs=execution_time_ms,
+            sql=validated_sql,
+        )
 
     except Exception as e:
         execution_time_ms = int((time.time() - start_time) * 1000)

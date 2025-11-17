@@ -4,17 +4,15 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlmodel import Session, select
 from typing import List
 from app.database import get_session
-from app.models.database import DatabaseConnection, ConnectionStatus
+from app.models.database import DatabaseConnection, ConnectionStatus, DatabaseType
+from app.utils.db_parser import detect_database_type
 from app.models.schemas import (
     DatabaseConnectionInput,
     DatabaseConnectionResponse,
     DatabaseMetadataResponse,
     TableMetadata,
 )
-from app.services.db_connection import (
-    test_connection,
-    close_connection_pool,
-)
+from app.services import connection_factory
 from app.services.metadata import fetch_metadata
 from datetime import datetime, timezone
 
@@ -26,6 +24,7 @@ def to_response(conn: DatabaseConnection) -> DatabaseConnectionResponse:
     return DatabaseConnectionResponse(
         name=conn.name,
         url=conn.url,
+        db_type=conn.db_type.value,
         description=conn.description,
         created_at=conn.created_at,
         updated_at=conn.updated_at,
@@ -58,8 +57,29 @@ async def create_or_update_database(
             detail="Name must contain only alphanumeric characters, hyphens, and underscores",
         )
 
+    # Detect or validate database type
+    try:
+        if input_data.db_type:
+            # Validate provided db_type
+            db_type = DatabaseType(input_data.db_type.lower())
+            # Also verify it matches URL
+            detected_type = detect_database_type(input_data.url)
+            if db_type != detected_type:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail=f"Database type mismatch: provided '{db_type.value}' but URL indicates '{detected_type.value}'",
+                )
+        else:
+            # Auto-detect from URL
+            db_type = detect_database_type(input_data.url)
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e),
+        )
+
     # Test connection
-    success, error_message = await test_connection(input_data.url)
+    success, error_message = await connection_factory.test_connection(db_type, input_data.url)
     if not success:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -75,6 +95,7 @@ async def create_or_update_database(
     if existing:
         # Update existing connection
         existing.url = input_data.url
+        existing.db_type = db_type
         existing.description = input_data.description
         existing.updated_at = datetime.now(timezone.utc)
         existing.last_connected_at = datetime.now(timezone.utc)
@@ -88,6 +109,7 @@ async def create_or_update_database(
         new_conn = DatabaseConnection(
             name=name,
             url=input_data.url,
+            db_type=db_type,
             description=input_data.description,
             status=ConnectionStatus.ACTIVE,
             last_connected_at=datetime.now(timezone.utc),
@@ -147,7 +169,7 @@ async def get_database_metadata(
 
     # Fetch metadata
     metadata_dict = await fetch_metadata(
-        session, name, connection.url, force_refresh=refresh
+        session, name, connection.db_type, connection.url, force_refresh=refresh
     )
 
     # Parse metadata
@@ -199,7 +221,7 @@ async def delete_database(
         )
 
     # Close connection pool
-    await close_connection_pool(name)
+    await connection_factory.close_connection_pool(connection.db_type, name)
 
     # Delete connection
     session.delete(connection)
@@ -235,7 +257,7 @@ async def refresh_database_metadata(
 
     # Force refresh metadata
     metadata_dict = await fetch_metadata(
-        session, name, connection.url, force_refresh=True
+        session, name, connection.db_type, connection.url, force_refresh=True
     )
 
     # Parse metadata

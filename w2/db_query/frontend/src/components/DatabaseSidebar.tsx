@@ -272,13 +272,13 @@ export const DatabaseSidebar: React.FC<DatabaseSidebarProps> = ({
             rules={[
               { required: true, message: "Please enter connection URL" },
               {
-                pattern: /^postgresql:\/\/.+/,
-                message: "Must be a valid PostgreSQL URL",
+                pattern: /^(postgresql|mysql):\/\/.+/,
+                message: "Must be a valid PostgreSQL or MySQL URL",
               },
             ]}
           >
             <Input
-              placeholder="postgresql://user:password@host:5432/dbname"
+              placeholder="postgresql://user:password@host:5432/dbname or mysql://user:password@host:3306/dbname"
               size="large"
             />
           </Form.Item>

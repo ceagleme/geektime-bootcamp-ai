@@ -5,6 +5,13 @@ from datetime import datetime, timezone
 from enum import Enum
 
 
+class DatabaseType(str, Enum):
+    """Database type."""
+
+    POSTGRESQL = "postgresql"
+    MYSQL = "mysql"
+
+
 class ConnectionStatus(str, Enum):
     """Database connection status."""
 
@@ -20,6 +27,7 @@ class DatabaseConnection(SQLModel, table=True):
 
     name: str = Field(primary_key=True, max_length=50)
     url: str = Field(index=True, max_length=500)
+    db_type: DatabaseType = Field(default=DatabaseType.POSTGRESQL)
     description: str | None = Field(default=None, max_length=200)
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc).replace(tzinfo=None))
     updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc).replace(tzinfo=None))

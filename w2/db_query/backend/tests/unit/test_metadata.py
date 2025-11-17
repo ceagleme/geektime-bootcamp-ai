@@ -6,7 +6,7 @@ from unittest.mock import AsyncMock, patch, MagicMock
 from datetime import datetime, timezone, timedelta
 from sqlmodel import Session, SQLModel, create_engine, select
 from app.services.metadata import (
-    extract_metadata,
+    extract_postgres_metadata,
     get_cached_metadata,
     cache_metadata,
     fetch_metadata,
@@ -163,7 +163,7 @@ class TestExtractMetadata:
             mock_row_2,  # orders count
         ]
 
-        metadata = await extract_metadata("test_db", pool)
+        metadata = await extract_postgres_metadata("test_db", pool)
 
         assert "tables" in metadata
         assert "views" in metadata
@@ -215,7 +215,7 @@ class TestExtractMetadata:
             ],
         ]
 
-        metadata = await extract_metadata("test_db", pool)
+        metadata = await extract_postgres_metadata("test_db", pool)
 
         assert len(metadata["views"]) == 1
         assert len(metadata["tables"]) == 0
@@ -250,7 +250,7 @@ class TestExtractMetadata:
         # Mock row count to raise error
         conn.fetchrow.side_effect = Exception("Permission denied")
 
-        metadata = await extract_metadata("test_db", pool)
+        metadata = await extract_postgres_metadata("test_db", pool)
 
         # Should still return metadata but without row count
         assert len(metadata["tables"]) == 1
@@ -405,7 +405,7 @@ class TestFetchMetadata:
 
         # Mock extract_metadata
         with patch("app.services.metadata.get_connection_pool", return_value=pool):
-            with patch("app.services.metadata.extract_metadata", return_value=sample_metadata) as mock_extract:
+            with patch("app.services.metadata.extract_postgres_metadata", return_value=sample_metadata) as mock_extract:
                 result = await fetch_metadata(
                     test_session,
                     "test_db",
@@ -435,7 +435,7 @@ class TestFetchMetadata:
 
         # Mock extract_metadata
         with patch("app.services.metadata.get_connection_pool", return_value=pool):
-            with patch("app.services.metadata.extract_metadata", return_value=sample_metadata) as mock_extract:
+            with patch("app.services.metadata.extract_postgres_metadata", return_value=sample_metadata) as mock_extract:
                 result = await fetch_metadata(
                     test_session,
                     "test_db",
@@ -455,7 +455,7 @@ class TestFetchMetadata:
 
         # Mock extract_metadata
         with patch("app.services.metadata.get_connection_pool", return_value=pool):
-            with patch("app.services.metadata.extract_metadata", return_value=sample_metadata) as mock_extract:
+            with patch("app.services.metadata.extract_postgres_metadata", return_value=sample_metadata) as mock_extract:
                 result = await fetch_metadata(
                     test_session,
                     "test_db",

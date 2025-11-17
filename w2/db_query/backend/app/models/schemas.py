@@ -10,7 +10,8 @@ from app.models.query import QuerySource
 class DatabaseConnectionInput(BaseModel):
     """Input schema for creating/updating database connection."""
 
-    url: str = Field(..., description="PostgreSQL connection URL")
+    url: str = Field(..., description="Database connection URL (PostgreSQL or MySQL)")
+    db_type: str | None = Field(default=None, alias="dbType", description="Database type (postgresql or mysql). Auto-detected from URL if not provided.")
     description: str | None = Field(default=None, max_length=200)
 
 
@@ -19,6 +20,7 @@ class DatabaseConnectionResponse(BaseModel):
 
     name: str
     url: str
+    db_type: str = Field(..., alias="dbType")
     description: str | None
     created_at: datetime
     updated_at: datetime
