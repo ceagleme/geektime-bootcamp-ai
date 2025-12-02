@@ -232,3 +232,7 @@ based on @w3/extracted/system-prompts.json and @w3/extracted/tool-definitions.js
 
 帮我生成一篇详细的技术文档，放在： ./site/src/pages/materials/transcribe-internals.md。根据 raflow项目所学的知识，同时搜索网络进行 deep research，详细介绍：1. 为什么需要重采样 48khz 立体声 -> 16khz 单声道，AI 模型为什么在 16khz PCM 上训练？2. 如何进行 echo cancellation，如何进行静音检测，为何这些没做好 elevenlabs realtime API 效果表现不佳？3.
 无锁设计在这样的 app 里为什么很重要？
+
+## 添加 slides
+
+仔细阅读 ./site 的代码，为 ./site 添加一个新的菜单：演示文稿，这个页面里面是一个演示文稿的列表。每个演示文档打开后都是一个 carousel，里面有一系列的图片，可以全屏播放。请为这个需求构建一个 react component，然后演示文档（mdx）里面调用这个 component

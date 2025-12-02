@@ -12,5 +12,6 @@ export const navItems: NavItem[] = [
   { label: '工具生态', href: getUrl('tools') },
   { label: '实战项目', href: getUrl('projects') },
   { label: '学习资料', href: getUrl('materials') },
+  { label: '演示文稿', href: getUrl('presentations') },
   { label: '关于', href: getUrl('about') },
 ];

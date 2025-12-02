@@ -1,0 +1,114 @@
+---
+import PageLayout from "../../layouts/PageLayout.astro";
+import PageHeader from "../../components/ui/PageHeader";
+import ScrollReveal from "../../components/ui/ScrollReveal";
+import { Play, Image, Calendar } from "lucide-react";
+import { getUrl } from "../../utils/url";
+import "../../styles/presentations.css";
+
+const presentations = [
+  {
+    title: "AI 编程训练营介绍",
+    description: "陈天 AI 编程训练营课程介绍与概览，了解课程框架与学习路径",
+    href: getUrl("presentations/intro"),
+    thumbnail: getUrl("slides/intro/intro-1.jpg"),
+    slideCount: 3,
+    date: "2025-01",
+    category: "课程介绍",
+  },
+];
+---
+
+<PageLayout
+  title="演示文稿 - 陈天 AI 训练营"
+  description="课程演示文稿、技术分享幻灯片"
+>
+  <PageHeader
+    title="演示文稿"
+    subtitle="课程讲义与技术分享"
+    client:load
+  >
+    <a href="#presentations" class="md-btn">浏览演示文稿</a>
+    <a href={getUrl("curriculum")} class="md-btn md-btn-secondary">返回课程</a>
+  </PageHeader>
+
+  <section
+    id="presentations"
+    class="md-section"
+    style="background-color: var(--md-cream); padding-top: var(--space-12); padding-bottom: var(--space-12);"
+  >
+    <div class="md-container">
+      <ScrollReveal client:load>
+        <div class="text-center mb-12">
+          <h2 class="text-h2 font-bold text-ink mb-6">课程演示文稿</h2>
+          <p
+            class="max-w-2xl mx-auto text-body text-slate"
+            style="line-height: 1.6;"
+          >
+            点击任意演示文稿开始浏览，支持全屏播放、键盘导航
+          </p>
+        </div>
+      </ScrollReveal>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+        {
+          presentations.map((pres, idx) => (
+            <ScrollReveal delay={idx * 0.1} client:load>
+              <a href={pres.href} class="presentation-card">
+                <div class="presentation-card-image">
+                  <img
+                    src={pres.thumbnail}
+                    alt={pres.title}
+                    loading="lazy"
+                    onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22400%22 height=%22225%22%3E%3Crect fill=%22%23383838%22 width=%22400%22 height=%22225%22/%3E%3Ctext x=%22200%22 y=%22112%22 fill=%22%23FFDE00%22 font-size=%2220%22 text-anchor=%22middle%22 dominant-baseline=%22middle%22%3E演示文稿%3C/text%3E%3C/svg%3E'"
+                  />
+                  <div class="presentation-card-overlay">
+                    <div class="play-icon">
+                      <Play size={28} fill="currentColor" />
+                    </div>
+                  </div>
+                </div>
+                <div class="presentation-card-content">
+                  <h3 class="presentation-card-title">{pres.title}</h3>
+                  <p class="presentation-card-description">{pres.description}</p>
+                  <div class="presentation-card-meta">
+                    <div class="presentation-card-slides">
+                      <Image size={16} />
+                      <span>{pres.slideCount} 张幻灯片</span>
+                    </div>
+                    <div class="presentation-card-date">
+                      <span>{pres.date}</span>
+                    </div>
+                  </div>
+                </div>
+              </a>
+            </ScrollReveal>
+          ))
+        }
+      </div>
+    </div>
+  </section>
+
+  <section
+    class="md-section"
+    style="background-color: var(--md-sky); padding-top: var(--space-12); padding-bottom: var(--space-12);"
+  >
+    <div class="md-container text-center">
+      <ScrollReveal client:load>
+        <h2 class="text-h2 font-bold text-graphite mb-10">想要学习更多？</h2>
+        <p
+          class="text-h3 mb-10 max-w-2xl mx-auto text-body text-graphite"
+          style="line-height: 1.5;"
+        >
+          演示文稿配合课程学习效果更佳
+        </p>
+        <div class="md-cta-stack justify-center">
+          <a href={getUrl("curriculum")} class="md-btn">开始学习课程</a>
+          <a href={getUrl("materials")} class="md-btn md-btn-secondary">
+            查看学习资料
+          </a>
+        </div>
+      </ScrollReveal>
+    </div>
+  </section>
+</PageLayout>
