@@ -527,7 +527,7 @@ SELECT
     u.first_name,
     u.last_name,
     COUNT(o.id) AS total_orders,
-    SUM(CASE WHEN o.status = 'completed' THEN o.total_amount ELSE 0 END) AS total_spent,
+    SUM(CASE WHEN o.status = 'delivered' THEN o.total_amount ELSE 0 END) AS total_spent,
     MAX(o.created_at) AS last_order_date,
     AVG(o.total_amount)::NUMERIC(10,2) AS average_order_value
 FROM users u

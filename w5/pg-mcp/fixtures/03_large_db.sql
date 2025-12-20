@@ -27,6 +27,7 @@ CREATE TYPE lead_status AS ENUM ('new', 'contacted', 'qualified', 'unqualified',
 CREATE TYPE deal_stage AS ENUM ('prospecting', 'qualification', 'proposal', 'negotiation', 'closed_won', 'closed_lost');
 CREATE TYPE ticket_status AS ENUM ('open', 'pending', 'in_progress', 'waiting_customer', 'resolved', 'closed');
 CREATE TYPE ticket_priority AS ENUM ('low', 'medium', 'high', 'urgent');
+CREATE TYPE task_priority AS ENUM ('low', 'medium', 'high', 'urgent');
 CREATE TYPE invoice_status AS ENUM ('draft', 'sent', 'paid', 'overdue', 'void', 'refunded');
 CREATE TYPE payment_status AS ENUM ('pending', 'completed', 'failed', 'refunded');
 CREATE TYPE activity_type AS ENUM ('call', 'email', 'meeting', 'note', 'task');
